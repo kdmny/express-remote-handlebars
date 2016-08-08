@@ -72,49 +72,14 @@ RemoteHandlebars.prototype.render = function render(filePath, options, callback)
     }
 };
 
-RemoteHandlebars.prototype.getLayout = function getLayout(url, options, callback) {
-    var self = this;
-
-    if (typeof options === 'function') {
-        callback = options;
-        options = null;
-    } else if (typeof url === 'function') {
-        callback = url;
-        options = null;
-        url = null;
-    }
-    url || (url = this.layout);
-    options || (options = {});
-
-    if (!url) throw new Error('RemoteHandlebars.getLayout expects url or this.layout');
-    if (!callback) throw new Error('RemoteHandlebars.getLayout expects callback');
-
-    // Ensure accept header
-    if (typeof url === 'string') {
-        url = {url: url};
-    }
-    url.headers || (url.headers = {});
-    url.headers['Accept'] = 'text/x-handlebars-template';
-
-    if (options.cache === false) {
-        return requestTemplate(null, function (error, template, cacheControl) {
-            callback(error, template);
-        });
-    }
-    this.cache.wrap(url.url, requestTemplate, callback);
-
-    function requestTemplate(key, done) {
-        self.requestTemplate(url, done);
-    }
-};
-
-RemoteHandlebars.prototype.getView = function getView(filePath, options, callback) {
+RemoteHandlebars.prototype.getLayout = function getLayout(filePath, options, callback) {
     var self = this;
 
     if (typeof options === 'function') {
         callback = options;
         options = null;
     }
+
     filePath = path.resolve(filePath);
     options || (options = {});
 
@@ -128,6 +93,47 @@ RemoteHandlebars.prototype.getView = function getView(filePath, options, callbac
 
     function readTemplate(key, done) {
         self.readTemplate(filePath, done);
+    }
+};
+
+RemoteHandlebars.prototype.getView = function getView(filePath, options, callback) {
+    var self = this;
+
+    if (typeof options === 'function') {
+        callback = options;
+        options = null;
+    }
+    if(filePath.toLowerCase().indexOf("http") === 0){
+        var url = {url: filePath};
+        url.headers || (url.headers = {});
+        url.headers['Accept'] = 'text/x-handlebars-template';
+
+        if (options.cache === false) {
+            return requestTemplate(null, function (error, template, cacheControl) {
+                callback(error, template);
+            });
+        }
+        this.cache.wrap(url.url, requestTemplate, callback);
+
+        function requestTemplate(key, done) {
+            self.requestTemplate(url, done);
+        }
+    } else{
+
+        filePath = path.resolve(filePath);
+        options || (options = {});
+
+        if (!filePath) throw new Error('RemoteHandlebars.getView expects filePath');
+        if (!callback) throw new Error('RemoteHandlebars.getView expects callback');
+
+        if (options.cache === false) {
+            return readTemplate(null, callback);
+        }
+        this.cacheForever.wrap(filePath, readTemplate, callback);
+
+        function readTemplate(key, done) {
+            self.readTemplate(filePath, done);
+        }
     }
 };
 
