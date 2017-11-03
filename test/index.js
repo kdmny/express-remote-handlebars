@@ -52,6 +52,19 @@ describe('RemoteHandlebars', function () {
     });
 
     describe('.render()', function () {
+        it('should return error if partial is missing', function (done) {
+            var view = path.resolve(__dirname, 'fixtures/views/missing-partials.handlebars');
+            var partialsDir = path.resolve(__dirname, 'fixtures/views/partials');
+            var layout = null; //'http://mocked/layouts/default';
+            remoteHandlebars.create({ partialsDir: partialsDir, layout: layout })
+            .render(view, {}, function (error, rendered) {
+                should.exist(error);
+                should.not.exist(rendered);
+
+                done();
+            });
+        });
+
         it('should render view with layout', function (done) {
             var view = path.resolve(__dirname, 'fixtures/views/index.handlebars');
             var partialsDir = path.resolve(__dirname, 'fixtures/views/partials');

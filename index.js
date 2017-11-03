@@ -52,12 +52,17 @@ RemoteHandlebars.prototype.render = function render(filePath, options, callback)
             partials: results.partials,
             data: options.data
         };
-        var rendered = results.view(context, settings);
-        if (results.layout) {
-            context[placeholder] = rendered;
-            rendered = results.layout(context, settings);
+
+        try {
+            var rendered = results.view(context, settings);
+            if (results.layout) {
+                context[placeholder] = rendered;
+                rendered = results.layout(context, settings);
+            }
+            callback(null, rendered);
+        } catch (err) {
+            callback(err);
         }
-        callback(null, rendered);
     });
 
     function viewTask(done) {
@@ -150,7 +155,7 @@ RemoteHandlebars.prototype.getPartials = function getPartials(partialsDir, optio
     }
     partialsDir || (partialsDir = this.partialsDir);
     options || (options = {});
-    
+
     if (!partialsDir) throw new Error('RemoteHandlebars.getPartials expects partialsDir or this.partialsDir');
     if (!callback) throw new Error('RemoteHandlebars.getPartials expects callback');
 
